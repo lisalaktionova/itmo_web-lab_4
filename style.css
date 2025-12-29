@@ -409,4 +409,111 @@ footer {
     .temperature {
         font-size: 36px;
     }
+    /* Добавьте в конец style.css */
+
+/* Улучшенные стили для ошибок */
+.error-message {
+    color: #e74c3c;
+    margin: 10px 0;
+    min-height: 20px;
+    font-size: 14px;
+    padding: 8px 12px;
+    background: #ffeaea;
+    border-radius: 6px;
+    border-left: 4px solid #e74c3c;
+}
+
+.error-message::before {
+    content: "⚠ ";
+}
+
+/* Улучшение подсказок */
+.suggestion-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #eee;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background: #3498db;
+    color: white;
+}
+
+/* Улучшение полей ввода */
+#city-input {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+#city-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+#city-input.error {
+    border-color: #e74c3c;
+}
+
+/* Кнопка удаления города */
+.remove-city {
+    background: rgba(231, 76, 60, 0.1);
+    border: none;
+    color: #e74c3c;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.remove-city:hover {
+    background: #e74c3c;
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Адаптивность для модального окна */
+@media (max-width: 480px) {
+    .modal-content {
+        margin: 20px;
+        padding: 20px;
+    }
+    
+    .modal-buttons {
+        flex-direction: column;
+    }
+    
+    .modal-buttons .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+/* Анимация появления */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.weather-card {
+    animation: fadeIn 0.5s ease;
+}
+
+.suggestions {
+    animation: fadeIn 0.2s ease;
+}
+
 }
