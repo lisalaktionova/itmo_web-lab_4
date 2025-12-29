@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Прогноз погоды</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-cloud-sun"></i> Прогноз погоды</h1>
+            <button id="refresh-btn" class="btn">
+                <i class="fas fa-sync-alt"></i> Обновить
+            </button>
+        </header>
+
+        <main>
+            <!-- Состояние загрузки -->
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Загрузка данных о погоде...</p>
+            </div>
+
+            <!-- Состояние ошибки -->
+            <div id="error" class="error hidden">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p id="error-message"></p>
+            </div>
+
+            <!-- Контейнер для прогноза -->
+            <div id="weather-container" class="weather-container hidden">
+                <!-- Города будут добавляться динамически -->
+            </div>
+
+            <!-- Модальное окно для добавления города -->
+            <div id="city-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h2>Добавить город</h2>
+                    <div class="search-container">
+                        <input type="text" id="city-input" placeholder="Введите название города...">
+                        <div id="suggestions" class="suggestions"></div>
+                    </div>
+                    <div id="city-error" class="error-message"></div>
+                    <div class="modal-buttons">
+                        <button id="add-city-btn" class="btn">Добавить</button>
+                        <button id="cancel-btn" class="btn btn-secondary">Отмена</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Кнопка добавления города -->
+            <button id="add-city-btn-main" class="btn add-city-btn">
+                <i class="fas fa-plus"></i> Добавить город
+            </button>
+
+            <!-- Геолокация запрос -->
+            <div id="location-request" class="location-request">
+                <h3>Разрешить доступ к геолокации?</h3>
+                <p>Для показа погоды в вашем местоположении</p>
+                <div class="location-buttons">
+                    <button id="allow-location" class="btn">Разрешить</button>
+                    <button id="deny-location" class="btn btn-secondary">Ввести город</button>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Используется API Open-Meteo</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
