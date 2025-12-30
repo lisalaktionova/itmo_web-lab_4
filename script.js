@@ -45,7 +45,6 @@ function loadState() {
             state.cities = parsed.cities || [];
             state.useGeolocation = parsed.useGeolocation !== false;
             
-            // Если есть сохраненные города, сразу грузим погоду
             if (state.cities.length > 0) {
                 loadWeatherForAllCities();
             }
@@ -115,7 +114,7 @@ function checkGeolocation() {
     elements.locationRequest.classList.remove('hidden');
 }
 
-// Запрос геолокации - ИСПРАВЛЕННАЯ ВЕРСИЯ
+// Запрос геолокации
 function requestGeolocation() {
     elements.locationRequest.classList.add('hidden');
     showLoading();
@@ -129,10 +128,6 @@ function requestGeolocation() {
     navigator.geolocation.getCurrentPosition(
         async (position) => {
             try {
-                console.log('Got position:', position.coords);
-                
-                // Создаем город для текущего местоположения БЕЗ названия
-                // (название получим позже или используем стандартное)
                 state.cities.push({
                     name: 'Текущее местоположение',
                     latitude: position.coords.latitude,
@@ -144,7 +139,6 @@ function requestGeolocation() {
                 await loadWeatherForAllCities();
                 hideLoading();
             } catch (error) {
-                console.error('Geolocation error:', error);
                 showError('Не удалось определить город по координатам');
                 state.useGeolocation = false;
                 saveState();
@@ -152,7 +146,6 @@ function requestGeolocation() {
             }
         },
         (error) => {
-            console.error('Geolocation permission error:', error);
             let errorMessage = 'Доступ к геолокации отклонен';
             
             switch(error.code) {
@@ -194,24 +187,27 @@ function showCityModal() {
     elements.cityModal.classList.remove('hidden');
     elements.cityInput.focus();
     elements.cityInput.value = '';
-    elements.cityInput.classList.remove('error'); // Убираем класс ошибки
+    elements.cityInput.classList.remove('error');
     elements.suggestions.innerHTML = '';
     elements.suggestions.style.display = 'none';
-    elements.cityError.textContent = ''; // ОЧИЩАЕМ ошибку
-    elements.cityError.style.display = 'none'; // Скрываем контейнер ошибки
-    hideError(); // Скрываем общие ошибки
+    hideCityError();
+    hideError();
 }
 
 // Скрыть модальное окно
 function hideCityModal() {
     elements.cityModal.classList.add('hidden');
-    // ОЧИЩАЕМ ошибку при закрытии
-    elements.cityError.textContent = '';
-    // Сбрасываем поле ввода
+    hideCityError();
     elements.cityInput.value = '';
-    // Скрываем подсказки
     elements.suggestions.innerHTML = '';
     elements.suggestions.style.display = 'none';
+}
+
+// Скрыть ошибку в модальном окне
+function hideCityError() {
+    elements.cityError.textContent = '';
+    elements.cityError.style.display = 'none';
+    elements.cityInput.classList.remove('error');
 }
 
 // Обработка ввода города
@@ -224,7 +220,6 @@ function handleCityInput() {
         return;
     }
     
-    // Фильтруем популярные города
     const popularCities = [
         'Москва', 'Санкт-Петербург', 'Новосибирск', 'Екатеринбург', 'Казань',
         'Нижний Новгород', 'Челябинск', 'Самара', 'Омск', 'Ростов-на-Дону',
@@ -257,18 +252,16 @@ function handleSuggestionClick(e) {
         elements.cityInput.value = e.target.dataset.city;
         elements.suggestions.innerHTML = '';
         elements.suggestions.style.display = 'none';
-        elements.cityError.textContent = '';
+        hideCityError();
     }
 }
 
-// Добавление города - ИСПРАВЛЕННАЯ ВЕРСИЯ С ВАЛИДАЦИЕЙ
-// Добавление города - ИСПРАВЛЕННАЯ ВЕРСИЯ
+// Добавление города
 async function addCity() {
     const cityName = elements.cityInput.value.trim();
     
-    // ОЧИЩАЕМ предыдущую ошибку
-    elements.cityError.textContent = '';
-    elements.cityInput.classList.remove('error');
+    // Очищаем предыдущую ошибку
+    hideCityError();
     
     if (!cityName) {
         showCityError('Введите название города');
@@ -282,10 +275,8 @@ async function addCity() {
         return;
     }
     
-    // Проверка на существующий город (регистронезависимая)
     const cityExists = state.cities.some(city => 
-        city.name.toLowerCase() === cityName.toLowerCase() ||
-        (city.isCurrentLocation && cityName.toLowerCase() === 'текущее местоположение')
+        city.name.toLowerCase() === cityName.toLowerCase()
     );
     
     if (cityExists) {
@@ -298,33 +289,6 @@ async function addCity() {
     
     try {
         const coords = await getCityCoords(cityName);
-        
-        if (!coords || !coords.latitude || !coords.longitude) {
-            throw new Error('Координаты города не найдены');
-        }
-        
-        // Проверка на дубликат по координатам
-        const coordExists = state.cities.some(city => 
-            Math.abs(city.latitude - coords.latitude) < 0.01 && 
-            Math.abs(city.longitude - coords.longitude) < 0.01
-        );
-        
-        if (coordExists) {
-            showCityError('Этот город уже добавлен (по координатам)');
-            elements.cityInput.classList.add('error');
-            return;
-        }
-        
-        // Ограничение на количество городов
-        if (state.cities.length >= 10) { // Увеличим лимит
-            showCityError('Можно добавить не более 10 городов');
-            elements.cityInput.classList.add('error');
-            return;
-        }
-        
-        // УСПЕШНОЕ добавление - скрываем ошибку
-        elements.cityError.textContent = '';
-        elements.cityInput.classList.remove('error');
         
         state.cities.push({
             name: cityName,
@@ -344,59 +308,41 @@ async function addCity() {
     }
 }
 
-// Получение координат города - ИСПРАВЛЕННАЯ ВЕРСИЯ
+// Получение координат города
 async function getCityCoords(cityName) {
-    try {
-        const response = await fetch(
-            `${GEOCODING_API}?name=${encodeURIComponent(cityName)}&count=10&language=ru`
-        );
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (!data.results || data.results.length === 0) {
-            throw new Error('Город не найден');
-        }
-        
-        // Ищем наиболее подходящий город (первый в списке)
-        const city = data.results[0];
-        
-        // Проверяем что это действительно город
-        if (city.feature_code !== 'PPL' && city.feature_code !== 'PPLA' && 
-            city.feature_code !== 'PPLC' && city.feature_code !== 'PPLA2') {
-            console.log('Found location is not a city:', city.feature_code);
-        }
-        
-        return {
-            latitude: city.latitude,
-            longitude: city.longitude,
-            name: city.name,
-            country: city.country
-        };
-    } catch (error) {
-        console.error('Error fetching city coords:', error);
-        throw new Error('Не удалось найти город. Проверьте название или попробуйте другой город.');
+    const response = await fetch(
+        `${GEOCODING_API}?name=${encodeURIComponent(cityName)}&count=1`
+    );
+    
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
     }
+    
+    const data = await response.json();
+    
+    if (!data.results || data.results.length === 0) {
+        throw new Error('Город не найден');
+    }
+    
+    return {
+        latitude: data.results[0].latitude,
+        longitude: data.results[0].longitude
+    };
 }
 
 // Показать ошибку в модальном окне
 function showCityError(message) {
     elements.cityError.textContent = message;
+    elements.cityError.style.display = 'block';
     elements.cityError.style.color = '#e74c3c';
-    elements.cityError.style.marginTop = '10px';
-    elements.cityError.style.minHeight = '20px';
     
-    // Сбрасываем состояние кнопки
     elements.addCityBtn.innerHTML = 'Добавить';
     elements.addCityBtn.disabled = false;
 }
 
 // Показать загрузку в модальном окне
 function showLoadingInModal() {
-    elements.cityError.textContent = '';
+    hideCityError();
     elements.addCityBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Поиск...';
     elements.addCityBtn.disabled = true;
 }
@@ -418,37 +364,26 @@ async function loadWeatherForAllCities() {
         renderWeather();
         hideLoading();
     } catch (error) {
-        console.error('Weather load error:', error);
         showError('Ошибка при загрузке погоды. Проверьте подключение к интернету.');
     }
 }
 
 // Получение данных о погоде
 async function getWeather(city) {
-    try {
-        const response = await fetch(
-            `${WEATHER_API}?latitude=${city.latitude}&longitude=${city.longitude}` +
-            `&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code` +
-            `&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max` +
-            `&timezone=auto&forecast_days=3`
-        );
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (!data.current || !data.daily) {
-            throw new Error('Некорректные данные о погоде');
-        }
-        
-        city.weather = data;
-        return data;
-    } catch (error) {
-        console.error('Error fetching weather:', error);
-        throw error;
+    const response = await fetch(
+        `${WEATHER_API}?latitude=${city.latitude}&longitude=${city.longitude}` +
+        `&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code` +
+        `&daily=temperature_2m_max,temperature_2m_min,weather_code` +
+        `&timezone=auto&forecast_days=3`
+    );
+    
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
     }
+    
+    const data = await response.json();
+    city.weather = data;
+    return data;
 }
 
 // Обновление погоды
@@ -466,19 +401,23 @@ async function refreshWeather() {
 function renderWeather() {
     elements.weatherContainer.innerHTML = '';
     
-    // Автоматически применяем компактный режим
-    const isCompact = state.cities.length >= 3;
+    if (state.cities.length === 0) {
+        elements.weatherContainer.classList.add('hidden');
+        checkGeolocation();
+        return;
+    }
+    
+    // Автоматически меняем класс при 3+ городах
+    if (state.cities.length >= 3) {
+        elements.weatherContainer.classList.add('many-cities');
+    } else {
+        elements.weatherContainer.classList.remove('many-cities');
+    }
     
     state.cities.forEach((city, index) => {
         if (!city.weather) return;
         
         const weatherCard = createWeatherCard(city, index);
-        
-        // Добавляем класс компактности если нужно
-        if (isCompact) {
-            weatherCard.classList.add('compact');
-        }
-        
         elements.weatherContainer.appendChild(weatherCard);
     });
     
@@ -492,15 +431,13 @@ function createWeatherCard(city, index) {
     
     const current = city.weather.current;
     const daily = city.weather.daily;
-    
-    // Форматирование дат
     const days = ['Сегодня', 'Завтра', 'Послезавтра'];
     
     card.innerHTML = `
         <div class="weather-header">
             <div class="city-name">${city.name}</div>
             ${!city.isCurrentLocation ? 
-                `<button class="remove-city" data-index="${index}" title="Удалить город">
+                `<button class="remove-city" data-index="${index}">
                     <i class="fas fa-times"></i>
                 </button>` : ''
             }
@@ -532,15 +469,12 @@ function createWeatherCard(city, index) {
                         <div class="forecast-temp">
                             ${Math.round(daily.temperature_2m_max[i])}° / ${Math.round(daily.temperature_2m_min[i])}°
                         </div>
-                        ${daily.precipitation_probability_max ? 
-                            `<div class="precipitation">Вероятность осадков: ${daily.precipitation_probability_max[i]}%</div>` : ''}
                     </div>
                 `).join('')}
             </div>
         </div>
     `;
     
-    // Добавление обработчика удаления города
     const removeBtn = card.querySelector('.remove-city');
     if (removeBtn) {
         removeBtn.addEventListener('click', () => removeCity(index));
@@ -551,69 +485,34 @@ function createWeatherCard(city, index) {
 
 // Удаление города
 function removeCity(index) {
-    if (index >= 0 && index < state.cities.length) {
-        state.cities.splice(index, 1);
-        saveState();
-        
-        if (state.cities.length === 0) {
-            // Если удалили все города, показываем запрос геолокации
-            state.useGeolocation = true;
-            saveState();
-        }
-        
-        loadWeatherForAllCities();
-    }
+    state.cities.splice(index, 1);
+    saveState();
+    loadWeatherForAllCities();
 }
 
 // Получение описания погоды по коду
 function getWeatherDescription(code) {
     const weatherCodes = {
-        0: 'Ясно',
-        1: 'Преимущественно ясно',
-        2: 'Переменная облачность',
-        3: 'Пасмурно',
-        45: 'Туман',
-        48: 'Туман с изморозью',
-        51: 'Слабая морось',
-        53: 'Умеренная морось',
-        55: 'Сильная морось',
-        56: 'Ледяная морось',
-        57: 'Сильная ледяная морось',
-        61: 'Слабый дождь',
-        63: 'Умеренный дождь',
-        65: 'Сильный дождь',
-        66: 'Ледяной дождь',
-        67: 'Сильный ледяной дождь',
-        71: 'Слабый снег',
-        73: 'Умеренный снег',
-        75: 'Сильный снег',
-        77: 'Снежные зерна',
-        80: 'Слабый ливень',
-        81: 'Умеренный ливень',
-        82: 'Сильный ливень',
-        85: 'Слабый снегопад',
-        86: 'Сильный снегопад',
-        95: 'Гроза',
-        96: 'Гроза с градом',
-        99: 'Сильная гроза с градом'
+        0: 'Ясно', 1: 'Преимущественно ясно', 2: 'Переменная облачность',
+        3: 'Пасмурно', 45: 'Туман', 48: 'Туман с изморозью',
+        51: 'Слабая морось', 53: 'Умеренная морось', 55: 'Сильная морось',
+        61: 'Слабый дождь', 63: 'Умеренный дождь', 65: 'Сильный дождь',
+        71: 'Слабый снег', 73: 'Умеренный снег', 75: 'Сильный снег',
+        80: 'Слабый ливень', 81: 'Умеренный ливень', 82: 'Сильный ливень',
+        85: 'Слабый снегопад', 86: 'Сильный снегопад', 95: 'Гроза'
     };
-    
     return weatherCodes[code] || 'Неизвестно';
 }
 
 // Получение иконки погоды по коду
 function getWeatherIcon(code) {
-    if (code === 0 || code === 1) return '<i class="fas fa-sun" title="Ясно"></i>';
-    if (code === 2) return '<i class="fas fa-cloud-sun" title="Переменная облачность"></i>';
-    if (code === 3) return '<i class="fas fa-cloud" title="Пасмурно"></i>';
-    if (code >= 45 && code <= 48) return '<i class="fas fa-smog" title="Туман"></i>';
-    if (code >= 51 && code <= 57) return '<i class="fas fa-cloud-rain" title="Морось"></i>';
-    if (code >= 61 && code <= 67) return '<i class="fas fa-cloud-showers-heavy" title="Дождь"></i>';
-    if (code >= 71 && code <= 77) return '<i class="fas fa-snowflake" title="Снег"></i>';
-    if (code >= 80 && code <= 82) return '<i class="fas fa-cloud-rain" title="Ливень"></i>';
-    if (code >= 85 && code <= 86) return '<i class="fas fa-snowflake" title="Снегопад"></i>';
-    if (code >= 95 && code <= 99) return '<i class="fas fa-bolt" title="Гроза"></i>';
-    return '<i class="fas fa-question" title="Неизвестно"></i>';
+    if (code <= 1) return '<i class="fas fa-sun"></i>';
+    if (code <= 3) return '<i class="fas fa-cloud-sun"></i>';
+    if (code <= 49) return '<i class="fas fa-smog"></i>';
+    if (code <= 65) return '<i class="fas fa-cloud-rain"></i>';
+    if (code <= 77) return '<i class="fas fa-snowflake"></i>';
+    if (code <= 82) return '<i class="fas fa-cloud-showers-heavy"></i>';
+    return '<i class="fas fa-bolt"></i>';
 }
 
 // Показать загрузку
@@ -643,7 +542,3 @@ function hideError() {
 
 // Запуск приложения
 document.addEventListener('DOMContentLoaded', init);
-
-
-
-
