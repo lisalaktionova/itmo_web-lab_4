@@ -438,19 +438,19 @@ async function refreshWeather() {
 function renderWeather() {
     elements.weatherContainer.innerHTML = '';
     
-    if (state.cities.length === 0) {
-        elements.weatherContainer.classList.add('hidden');
-        checkGeolocation();
-        return;
-    }
+    // Автоматически применяем компактный режим
+    const isCompact = state.cities.length >= 3;
     
     state.cities.forEach((city, index) => {
-        if (!city.weather) {
-            console.log('No weather data for city:', city.name);
-            return;
-        }
+        if (!city.weather) return;
         
         const weatherCard = createWeatherCard(city, index);
+        
+        // Добавляем класс компактности если нужно
+        if (isCompact) {
+            weatherCard.classList.add('compact');
+        }
+        
         elements.weatherContainer.appendChild(weatherCard);
     });
     
@@ -615,3 +615,4 @@ function hideError() {
 
 // Запуск приложения
 document.addEventListener('DOMContentLoaded', init);
+
