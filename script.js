@@ -194,10 +194,12 @@ function showCityModal() {
     elements.cityModal.classList.remove('hidden');
     elements.cityInput.focus();
     elements.cityInput.value = '';
+    elements.cityInput.classList.remove('error'); // Убираем класс ошибки
     elements.suggestions.innerHTML = '';
     elements.suggestions.style.display = 'none';
-    elements.cityError.textContent = '';
-    hideError(); // Скрываем общие ошибки при показе модалки
+    elements.cityError.textContent = ''; // ОЧИЩАЕМ ошибку
+    elements.cityError.style.display = 'none'; // Скрываем контейнер ошибки
+    hideError(); // Скрываем общие ошибки
 }
 
 // Скрыть модальное окно
@@ -641,6 +643,7 @@ function hideError() {
 
 // Запуск приложения
 document.addEventListener('DOMContentLoaded', init);
+
 
 
 
