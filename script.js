@@ -203,6 +203,13 @@ function showCityModal() {
 // Скрыть модальное окно
 function hideCityModal() {
     elements.cityModal.classList.add('hidden');
+    // ОЧИЩАЕМ ошибку при закрытии
+    elements.cityError.textContent = '';
+    // Сбрасываем поле ввода
+    elements.cityInput.value = '';
+    // Скрываем подсказки
+    elements.suggestions.innerHTML = '';
+    elements.suggestions.style.display = 'none';
 }
 
 // Обработка ввода города
@@ -615,4 +622,5 @@ function hideError() {
 
 // Запуск приложения
 document.addEventListener('DOMContentLoaded', init);
+
 
