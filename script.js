@@ -260,26 +260,35 @@ function handleSuggestionClick(e) {
 }
 
 // Добавление города - ИСПРАВЛЕННАЯ ВЕРСИЯ С ВАЛИДАЦИЕЙ
+// Добавление города - ИСПРАВЛЕННАЯ ВЕРСИЯ
 async function addCity() {
     const cityName = elements.cityInput.value.trim();
     
+    // ОЧИЩАЕМ предыдущую ошибку
+    elements.cityError.textContent = '';
+    elements.cityInput.classList.remove('error');
+    
     if (!cityName) {
         showCityError('Введите название города');
+        elements.cityInput.classList.add('error');
         return;
     }
     
-    // Проверка на минимальную длину
     if (cityName.length < 2) {
         showCityError('Название города должно содержать минимум 2 символа');
+        elements.cityInput.classList.add('error');
         return;
     }
     
-    // Проверка на существующий город
-    if (state.cities.some(city => 
+    // Проверка на существующий город (регистронезависимая)
+    const cityExists = state.cities.some(city => 
         city.name.toLowerCase() === cityName.toLowerCase() ||
         (city.isCurrentLocation && cityName.toLowerCase() === 'текущее местоположение')
-    )) {
+    );
+    
+    if (cityExists) {
         showCityError('Этот город уже добавлен');
+        elements.cityInput.classList.add('error');
         return;
     }
     
@@ -293,19 +302,27 @@ async function addCity() {
         }
         
         // Проверка на дубликат по координатам
-        if (state.cities.some(city => 
+        const coordExists = state.cities.some(city => 
             Math.abs(city.latitude - coords.latitude) < 0.01 && 
             Math.abs(city.longitude - coords.longitude) < 0.01
-        )) {
-            showCityError('Этот город уже добавлен');
+        );
+        
+        if (coordExists) {
+            showCityError('Этот город уже добавлен (по координатам)');
+            elements.cityInput.classList.add('error');
             return;
         }
         
-        // Ограничение на количество городов (максимум 5 для примера)
-        if (state.cities.length >= 5) {
-            showCityError('Можно добавить не более 5 городов');
+        // Ограничение на количество городов
+        if (state.cities.length >= 10) { // Увеличим лимит
+            showCityError('Можно добавить не более 10 городов');
+            elements.cityInput.classList.add('error');
             return;
         }
+        
+        // УСПЕШНОЕ добавление - скрываем ошибку
+        elements.cityError.textContent = '';
+        elements.cityInput.classList.remove('error');
         
         state.cities.push({
             name: cityName,
@@ -317,9 +334,11 @@ async function addCity() {
         saveState();
         hideCityModal();
         await loadWeatherForAllCities();
+        
     } catch (error) {
         console.error('City add error:', error);
         showCityError('Город не найден. Проверьте правильность написания.');
+        elements.cityInput.classList.add('error');
     }
 }
 
@@ -622,5 +641,6 @@ function hideError() {
 
 // Запуск приложения
 document.addEventListener('DOMContentLoaded', init);
+
 
 
