@@ -1,4 +1,4 @@
-// Конфигурация API
+//Конфигурация API
 const WEATHER_API = 'https://api.open-meteo.com/v1/forecast';
 const GEOCODING_API = 'https://geocoding-api.open-meteo.com/v1/search';
 
@@ -10,7 +10,7 @@ let state = {
     useGeolocation: true
 };
 
-// DOM элементы
+//DOM элементы
 const elements = {
     loading: document.getElementById('loading'),
     error: document.getElementById('error'),
@@ -29,14 +29,14 @@ const elements = {
     denyLocation: document.getElementById('deny-location')
 };
 
-// Инициализация приложения
+//инициализация приложения
 function init() {
     loadState();
     setupEventListeners();
     checkGeolocation();
 }
 
-// Загрузка состояния из localStorage
+// загрузка состояния из localStorage
 function loadState() {
     const saved = localStorage.getItem('weatherAppState');
     if (saved) {
@@ -63,8 +63,7 @@ function saveState() {
         useGeolocation: state.useGeolocation
     }));
 }
-
-// Настройка обработчиков событий
+//настройка обработчиков событий
 function setupEventListeners() {
     elements.refreshBtn.addEventListener('click', refreshWeather);
     elements.addCityBtnMain.addEventListener('click', showCityModal);
@@ -72,25 +71,21 @@ function setupEventListeners() {
     elements.cancelBtn.addEventListener('click', hideCityModal);
     elements.allowLocation.addEventListener('click', requestGeolocation);
     elements.denyLocation.addEventListener('click', denyGeolocation);
-    
     elements.cityInput.addEventListener('input', handleCityInput);
     elements.suggestions.addEventListener('click', handleSuggestionClick);
-    
-    // Закрытие модального окна при клике вне его
+    // закрытие модального окна при клике вне его
     elements.cityModal.addEventListener('click', (e) => {
         if (e.target === elements.cityModal) {
             hideCityModal();
         }
     });
     
-    // Закрытие по Escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && !elements.cityModal.classList.contains('hidden')) {
             hideCityModal();
         }
     });
-    
-    // Выбор подсказки по Enter
+    //выбор подсказки по Enter
     elements.cityInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -98,19 +93,16 @@ function setupEventListeners() {
         }
     });
 }
-
-// Проверка геолокации
+//проверка геолокации
 function checkGeolocation() {
     if (state.cities.length > 0) {
         elements.locationRequest.classList.add('hidden');
         return;
     }
-    
     if (!state.useGeolocation) {
         showCityModal();
         return;
     }
-    
     elements.locationRequest.classList.remove('hidden');
 }
 
@@ -118,13 +110,11 @@ function checkGeolocation() {
 function requestGeolocation() {
     elements.locationRequest.classList.add('hidden');
     showLoading();
-    
     if (!navigator.geolocation) {
         showError('Геолокация не поддерживается вашим браузером');
         showCityModal();
         return;
     }
-    
     navigator.geolocation.getCurrentPosition(
         async (position) => {
             try {
@@ -134,7 +124,6 @@ function requestGeolocation() {
                     longitude: position.coords.longitude,
                     isCurrentLocation: true
                 });
-                
                 saveState();
                 await loadWeatherForAllCities();
                 hideLoading();
@@ -147,7 +136,6 @@ function requestGeolocation() {
         },
         (error) => {
             let errorMessage = 'Доступ к геолокации отклонен';
-            
             switch(error.code) {
                 case error.PERMISSION_DENIED:
                     errorMessage = 'Доступ к геолокации отклонен. Разрешите доступ в настройках браузера.';
@@ -159,7 +147,6 @@ function requestGeolocation() {
                     errorMessage = 'Время ожидания геолокации истекло.';
                     break;
             }
-            
             showError(errorMessage);
             state.useGeolocation = false;
             saveState();
@@ -174,7 +161,6 @@ function requestGeolocation() {
     );
 }
 
-// Отказ от геолокации
 function denyGeolocation() {
     state.useGeolocation = false;
     saveState();
@@ -182,7 +168,7 @@ function denyGeolocation() {
     showCityModal();
 }
 
-// Показать модальное окно добавления города
+// показ модального окна добавления города
 function showCityModal() {
     elements.cityModal.classList.remove('hidden');
     elements.cityInput.focus();
@@ -193,7 +179,6 @@ function showCityModal() {
     hideCityError();
     hideError();
 }
-
 // Скрыть модальное окно
 function hideCityModal() {
     elements.cityModal.classList.add('hidden');
@@ -202,24 +187,20 @@ function hideCityModal() {
     elements.suggestions.innerHTML = '';
     elements.suggestions.style.display = 'none';
 }
-
 // Скрыть ошибку в модальном окне
 function hideCityError() {
     elements.cityError.textContent = '';
     elements.cityError.style.display = 'none';
     elements.cityInput.classList.remove('error');
 }
-
-// Обработка ввода города
+// обработка ввода города
 function handleCityInput() {
     const query = elements.cityInput.value.trim();
     elements.suggestions.innerHTML = '';
-    
     if (query.length < 2) {
         elements.suggestions.style.display = 'none';
         return;
     }
-    
     const popularCities = [
         'Москва', 'Санкт-Петербург', 'Новосибирск', 'Екатеринбург', 'Казань',
         'Нижний Новгород', 'Челябинск', 'Самара', 'Омск', 'Ростов-на-Дону',
@@ -227,11 +208,9 @@ function handleCityInput() {
         'Киев', 'Минск', 'Астана', 'Лондон', 'Париж',
         'Берлин', 'Мадрид', 'Рим', 'Нью-Йорк', 'Токио'
     ];
-    
     const filtered = popularCities.filter(city =>
         city.toLowerCase().includes(query.toLowerCase())
     );
-    
     if (filtered.length > 0) {
         filtered.forEach(city => {
             const div = document.createElement('div');
@@ -246,7 +225,6 @@ function handleCityInput() {
     }
 }
 
-// Обработка выбора подсказки
 function handleSuggestionClick(e) {
     if (e.target.classList.contains('suggestion-item')) {
         elements.cityInput.value = e.target.dataset.city;
@@ -256,51 +234,41 @@ function handleSuggestionClick(e) {
     }
 }
 
-// Добавление города
+//добавление города
 async function addCity() {
     const cityName = elements.cityInput.value.trim();
-    
     // Очищаем предыдущую ошибку
     hideCityError();
-    
     if (!cityName) {
         showCityError('Введите название города');
         elements.cityInput.classList.add('error');
         return;
     }
-    
     if (cityName.length < 2) {
         showCityError('Название города должно содержать минимум 2 символа');
         elements.cityInput.classList.add('error');
         return;
     }
-    
     const cityExists = state.cities.some(city => 
         city.name.toLowerCase() === cityName.toLowerCase()
     );
-    
     if (cityExists) {
         showCityError('Этот город уже добавлен');
         elements.cityInput.classList.add('error');
         return;
     }
-    
     showLoadingInModal();
-    
     try {
         const coords = await getCityCoords(cityName);
-        
         state.cities.push({
             name: cityName,
             latitude: coords.latitude,
             longitude: coords.longitude,
             isCurrentLocation: false
         });
-        
         saveState();
         hideCityModal();
         await loadWeatherForAllCities();
-        
     } catch (error) {
         console.error('City add error:', error);
         showCityError('Город не найден. Проверьте правильность написания.');
@@ -308,36 +276,27 @@ async function addCity() {
     }
 }
 
-// Получение координат города
+// получение координат города
 async function getCityCoords(cityName) {
     try {
-        // Кодируем название для URL
+        // кодируем название для URL
         const encodedName = encodeURIComponent(cityName);
-        
-        // Делаем запрос с параметрами для русских названий
         const response = await fetch(
             `${GEOCODING_API}?name=${encodedName}&count=10&language=ru&format=json`
         );
-        
         if (!response.ok) {
             console.error('HTTP Error:', response.status, response.statusText);
             throw new Error(`Ошибка сервера: ${response.status}`);
         }
-        
         const data = await response.json();
-        
-        // Логируем ответ для отладки
         console.log('Geocoding API response:', data);
-        
         if (!data.results || data.results.length === 0) {
             console.log('No results found for:', cityName);
             throw new Error('Город не найден');
         }
         
-        // Ищем наиболее подходящий результат
         let bestMatch = data.results[0];
-        
-        // Пытаемся найти точное совпадение по названию
+        // пытаемся найти точное совпадение по названию
         const exactMatch = data.results.find(city => 
             city.name.toLowerCase() === cityName.toLowerCase() ||
             city.ascii_name?.toLowerCase() === cityName.toLowerCase()
@@ -346,34 +305,29 @@ async function getCityCoords(cityName) {
         if (exactMatch) {
             bestMatch = exactMatch;
         }
-        
         console.log('Selected city:', bestMatch.name, 'at', bestMatch.latitude, bestMatch.longitude);
-        
         return {
             latitude: bestMatch.latitude,
             longitude: bestMatch.longitude,
             name: bestMatch.name,
             country: bestMatch.country
         };
-        
     } catch (error) {
         console.error('Geocoding error:', error);
         throw new Error('Не удалось найти город. Проверьте название и попробуйте снова.');
     }
 }
 
-
-// Показать ошибку в модальном окне
+// показ ошибки в модальном окне
 function showCityError(message) {
     elements.cityError.textContent = message;
     elements.cityError.style.display = 'block';
     elements.cityError.style.color = '#e74c3c';
-    
     elements.addCityBtn.innerHTML = 'Добавить';
     elements.addCityBtn.disabled = false;
 }
 
-// Показать загрузку в модальном окне
+// показ загрузки в модальном окне
 function showLoadingInModal() {
     hideCityError();
     elements.addCityBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Поиск...';
@@ -386,14 +340,11 @@ async function loadWeatherForAllCities() {
         checkGeolocation();
         return;
     }
-    
     showLoading();
     hideError();
-    
     try {
         const weatherPromises = state.cities.map(city => getWeather(city));
         await Promise.all(weatherPromises);
-        
         renderWeather();
         hideLoading();
     } catch (error) {
@@ -401,7 +352,7 @@ async function loadWeatherForAllCities() {
     }
 }
 
-// Получение данных о погоде
+// получение данных о погоде
 async function getWeather(city) {
     const response = await fetch(
         `${WEATHER_API}?latitude=${city.latitude}&longitude=${city.longitude}` +
@@ -409,63 +360,49 @@ async function getWeather(city) {
         `&daily=temperature_2m_max,temperature_2m_min,weather_code` +
         `&timezone=auto&forecast_days=3`
     );
-    
     if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
     const data = await response.json();
     city.weather = data;
     return data;
 }
-
-// Обновление погоды
+//обновление погоды
 async function refreshWeather() {
     elements.refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Обновление...';
     elements.refreshBtn.disabled = true;
-    
     await loadWeatherForAllCities();
-    
     elements.refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Обновить';
     elements.refreshBtn.disabled = false;
 }
-
 // Отображение погоды
 function renderWeather() {
     elements.weatherContainer.innerHTML = '';
-    
     if (state.cities.length === 0) {
         elements.weatherContainer.classList.add('hidden');
         checkGeolocation();
         return;
     }
-    
-    // Автоматически меняем класс при 3+ городах
+    // автоматически меняем класс при 3+ городах
     if (state.cities.length >= 3) {
         elements.weatherContainer.classList.add('many-cities');
     } else {
         elements.weatherContainer.classList.remove('many-cities');
     }
-    
     state.cities.forEach((city, index) => {
         if (!city.weather) return;
-        
         const weatherCard = createWeatherCard(city, index);
         elements.weatherContainer.appendChild(weatherCard);
     });
-    
     elements.weatherContainer.classList.remove('hidden');
 }
-
 // Создание карточки погоды
 function createWeatherCard(city, index) {
     const card = document.createElement('div');
     card.className = `weather-card ${city.isCurrentLocation ? 'current' : ''}`;
-    
     const current = city.weather.current;
     const daily = city.weather.daily;
     const days = ['Сегодня', 'Завтра', 'Послезавтра'];
-    
     card.innerHTML = `
         <div class="weather-header">
             <div class="city-name">${city.name}</div>
@@ -512,18 +449,17 @@ function createWeatherCard(city, index) {
     if (removeBtn) {
         removeBtn.addEventListener('click', () => removeCity(index));
     }
-    
     return card;
 }
 
-// Удаление города
+// удаление города
 function removeCity(index) {
     state.cities.splice(index, 1);
     saveState();
     loadWeatherForAllCities();
 }
 
-// Получение описания погоды по коду
+// получение описания погоды по коду
 function getWeatherDescription(code) {
     const weatherCodes = {
         0: 'Ясно', 1: 'Преимущественно ясно', 2: 'Переменная облачность',
@@ -537,7 +473,7 @@ function getWeatherDescription(code) {
     return weatherCodes[code] || 'Неизвестно';
 }
 
-// Получение иконки погоды по коду
+// получение иконки погоды по коду
 function getWeatherIcon(code) {
     if (code <= 1) return '<i class="fas fa-sun"></i>';
     if (code <= 3) return '<i class="fas fa-cloud-sun"></i>';
@@ -547,32 +483,26 @@ function getWeatherIcon(code) {
     if (code <= 82) return '<i class="fas fa-cloud-showers-heavy"></i>';
     return '<i class="fas fa-bolt"></i>';
 }
-
-// Показать загрузку
+// показать загрузку
 function showLoading() {
     elements.loading.classList.remove('hidden');
     elements.weatherContainer.classList.add('hidden');
     elements.error.classList.add('hidden');
 }
-
-// Скрыть загрузку
+// скрыть загрузку
 function hideLoading() {
     elements.loading.classList.add('hidden');
 }
-
-// Показать ошибку
+// показать ошибку
 function showError(message) {
     elements.errorMessage.textContent = message;
     elements.error.classList.remove('hidden');
     elements.weatherContainer.classList.add('hidden');
     elements.loading.classList.add('hidden');
 }
-
-// Скрыть ошибку
+// скрыть ошибку
 function hideError() {
     elements.error.classList.add('hidden');
 }
-
-// Запуск приложения
+// запуск приложения
 document.addEventListener('DOMContentLoaded', init);
-
