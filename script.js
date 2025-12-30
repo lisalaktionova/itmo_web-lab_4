@@ -310,25 +310,58 @@ async function addCity() {
 
 // Получение координат города
 async function getCityCoords(cityName) {
-    const response = await fetch(
-        `${GEOCODING_API}?name=${encodeURIComponent(cityName)}&count=1`
-    );
-    
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+    try {
+        // Кодируем название для URL
+        const encodedName = encodeURIComponent(cityName);
+        
+        // Делаем запрос с параметрами для русских названий
+        const response = await fetch(
+            `${GEOCODING_API}?name=${encodedName}&count=10&language=ru&format=json`
+        );
+        
+        if (!response.ok) {
+            console.error('HTTP Error:', response.status, response.statusText);
+            throw new Error(`Ошибка сервера: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Логируем ответ для отладки
+        console.log('Geocoding API response:', data);
+        
+        if (!data.results || data.results.length === 0) {
+            console.log('No results found for:', cityName);
+            throw new Error('Город не найден');
+        }
+        
+        // Ищем наиболее подходящий результат
+        let bestMatch = data.results[0];
+        
+        // Пытаемся найти точное совпадение по названию
+        const exactMatch = data.results.find(city => 
+            city.name.toLowerCase() === cityName.toLowerCase() ||
+            city.ascii_name?.toLowerCase() === cityName.toLowerCase()
+        );
+        
+        if (exactMatch) {
+            bestMatch = exactMatch;
+        }
+        
+        console.log('Selected city:', bestMatch.name, 'at', bestMatch.latitude, bestMatch.longitude);
+        
+        return {
+            latitude: bestMatch.latitude,
+            longitude: bestMatch.longitude,
+            name: bestMatch.name,
+            country: bestMatch.country
+        };
+        
+    } catch (error) {
+        console.error('Geocoding error:', error);
+        throw new Error('Не удалось найти город. Проверьте название и попробуйте снова.');
     }
-    
-    const data = await response.json();
-    
-    if (!data.results || data.results.length === 0) {
-        throw new Error('Город не найден');
-    }
-    
-    return {
-        latitude: data.results[0].latitude,
-        longitude: data.results[0].longitude
-    };
 }
+
 
 // Показать ошибку в модальном окне
 function showCityError(message) {
@@ -542,3 +575,4 @@ function hideError() {
 
 // Запуск приложения
 document.addEventListener('DOMContentLoaded', init);
+
