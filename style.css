@@ -574,7 +574,45 @@ footer {
     .forecast-day {
         padding: 6px 3px;
     }
+    /* Контейнер для ошибки в модальном окне */
+#city-error {
+    min-height: 24px;
+    margin: 10px 0;
+    transition: all 0.3s ease;
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
 }
+
+#city-error:not(:empty) {
+    opacity: 1;
+    height: auto;
+    padding: 8px 12px;
+    background: #ffeaea;
+    border-radius: 6px;
+    border-left: 4px solid #e74c3c;
+    color: #e74c3c;
+    margin-top: 10px;
+}
+
+/* Стиль для поля ввода с ошибкой */
+#city-input.error {
+    border-color: #e74c3c;
+    background: #fff5f5;
+}
+
+#city-input.error:focus {
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2);
+}
+
+/* Иконка ошибки */
+#city-error::before {
+    content: "⚠ ";
+    margin-right: 5px;
+}
+}
+
 
 
 
